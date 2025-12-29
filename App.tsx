@@ -1,4 +1,5 @@
 
+import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { FinancialMentorService } from './services/geminiService';
@@ -177,7 +178,8 @@ const App: React.FC = () => {
     };
 
     loadAppData();
-    if (process.env.API_KEY) mentorService.current = new FinancialMentorService(process.env.API_KEY);
+    // MentorService automatically uses process.env.API_KEY internally
+    mentorService.current = new FinancialMentorService();
   }, [session, currentUser]);
 
   useEffect(() => {

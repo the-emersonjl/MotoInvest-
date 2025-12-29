@@ -22,8 +22,9 @@ Formato de Resposta:
 export class FinancialMentorService {
   private chat: Chat;
 
-  constructor(apiKey: string) {
-    const ai = new GoogleGenAI({ apiKey });
+  // Use process.env.API_KEY directly as required by the Gemini API guidelines
+  constructor() {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     this.chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
       config: {
