@@ -1,0 +1,7 @@
+{
+  "name": "MotoInvest - Seu Mentor Financeiro",
+  "description": "Um app inteligente para motoboys e profissionais com renda variável, focado em organização financeira, quitação de dívidas e estratégia de enriquecimento usando IA.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
