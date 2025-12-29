@@ -1,5 +1,3 @@
-
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { FinancialMentorService } from './services/geminiService';

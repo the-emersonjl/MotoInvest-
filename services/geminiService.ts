@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { Role, Message } from "../types";
 
@@ -22,8 +21,8 @@ Formato de Resposta:
 export class FinancialMentorService {
   private chat: Chat;
 
-  // Use process.env.API_KEY directly as required by the Gemini API guidelines
   constructor() {
+    // Initialize GoogleGenAI with the API key from environment variables as per guidelines
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     this.chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
@@ -36,6 +35,7 @@ export class FinancialMentorService {
   async sendMessage(message: string): Promise<string> {
     try {
       const result = await this.chat.sendMessage({ message });
+      // response.text is a property, not a function
       return result.text || "Desculpe, tive um problema ao processar sua resposta.";
     } catch (error) {
       console.error("Gemini Error:", error);
@@ -48,6 +48,7 @@ export class FinancialMentorService {
       const result = await this.chat.sendMessageStream({ message });
       for await (const chunk of result) {
         const c = chunk as GenerateContentResponse;
+        // Access chunk.text property
         yield c.text || "";
       }
     } catch (error) {
