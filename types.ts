@@ -23,6 +23,25 @@ export interface Bill {
   isPaid: boolean;
 }
 
+export interface Expense {
+  id: string;
+  value: number;
+  date: string;
+  description?: string;
+}
+
+export interface Profile {
+  age: string;
+  gender: string;
+  experience: string;
+  tool: string;
+  days_week: string;
+  hours_day: string;
+  platforms: string[];
+  accident: boolean;
+  challenge: string;
+}
+
 export interface FinancialData {
   dailyIncome: number[];
   fixedCosts: number;

@@ -1,45 +1,63 @@
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
-import { Role, Message } from "../types";
+
+import { GoogleGenAI, Chat, GenerateContentResponse, Type, FunctionDeclaration } from "@google/genai";
+import { Role } from "../types";
+
+const addBillDeclaration: FunctionDeclaration = {
+  name: 'add_bill',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Adiciona uma nova conta/boleto ao calendário financeiro do usuário.',
+    properties: {
+      name: { type: Type.STRING, description: 'Nome da conta (ex: Aluguel, Internet, MEI)' },
+      amount: { type: Type.NUMBER, description: 'Valor da conta em Reais' },
+      dueDate: { type: Type.STRING, description: 'Data de vencimento no formato YYYY-MM-DD' },
+    },
+    required: ['name', 'amount', 'dueDate'],
+  },
+};
 
 const SYSTEM_INSTRUCTION = `
 Contexto: Você é o MotoInvest AI, o mentor financeiro definitivo para motoboys.
-Sua missão: Receber o valor do faturamento diário e dizer EXATAMENTE como o usuário deve dividir esse dinheiro AGORA para não ficar sem grana no fim do mês.
+Sua missão: Ajudar o motoboy a organizar ganhos e, agora, gerenciar o CALENDÁRIO de contas.
 
-Diretrizes de Divisão Imediata (Para ganhos diários):
-1. Combustível/Manutenção (Sugira 20-25%): Dinheiro para o dia seguinte.
-2. Reserva de Emergência/Manutenção (Sugira 10%): Para pneus, óleo, imprevistos.
-3. Pagamento de Dívidas/Contas (Sugira 30%): Focar no próximo vencimento.
-4. Lucro Real/Pessoal (O que sobrar): O que ele pode gastar ou investir.
+Habilidades Especiais:
+1. Você pode ADICIONAR contas ao calendário usando a ferramenta 'add_bill'.
+2. Se o usuário disser algo como "anota aí o aluguel de 600 reais pro dia 10", chame a função correspondente.
+3. Sempre confirme após usar uma ferramenta.
 
-Formato de Resposta:
-- Use uma tabela Markdown clara: "Divisão do Ganho de Hoje (R$ [VALOR])".
-- Dê ordens claras: "Guarde R$ X para gasolina", "Separe R$ Y para o aluguel".
-- Termine com uma frase motivadora curta.
-- Sempre considere o contexto de renda variável.
+Diretrizes de Divisão de Ganhos:
+- Combustível (20-25%)
+- Manutenção/Reserva (10%)
+- Contas/Dívidas (30%)
+- Lucro/Pessoal (Restante)
+
+Formato: Use Markdown, tabelas para divisões de grana e seja direto, usando a gíria do corre de forma profissional.
 `;
 
 export class FinancialMentorService {
   private chat: Chat;
 
   constructor() {
-    // Initialize GoogleGenAI with the API key from environment variables as per guidelines
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     this.chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
+        tools: [{ functionDeclarations: [addBillDeclaration] }],
       },
     });
   }
 
-  async sendMessage(message: string): Promise<string> {
+  async sendMessage(message: string): Promise<{ text: string; functionCalls?: any[] }> {
     try {
       const result = await this.chat.sendMessage({ message });
-      // response.text is a property, not a function
-      return result.text || "Desculpe, tive um problema ao processar sua resposta.";
+      return {
+        text: result.text || "",
+        functionCalls: result.functionCalls
+      };
     } catch (error) {
       console.error("Gemini Error:", error);
-      return "Erro de conexão com o mentor.";
+      return { text: "Erro de conexão com o mentor." };
     }
   }
 
@@ -48,12 +66,15 @@ export class FinancialMentorService {
       const result = await this.chat.sendMessageStream({ message });
       for await (const chunk of result) {
         const c = chunk as GenerateContentResponse;
-        // Access chunk.text property
-        yield c.text || "";
+        if (c.functionCalls) {
+          yield { functionCalls: c.functionCalls };
+        } else {
+          yield { text: c.text || "" };
+        }
       }
     } catch (error) {
       console.error("Gemini Stream Error:", error);
-      yield "Erro ao receber resposta.";
+      yield { text: "Erro ao receber resposta." };
     }
   }
 }
