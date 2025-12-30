@@ -1,15 +1,25 @@
 
 import React from 'react';
 
+// Novo componente de Logo que usa a imagem oficial do app
+export const AppLogo = ({ className = "w-10 h-10" }) => (
+  <img 
+    src="https://cdn-icons-png.flaticon.com/512/3198/3198336.png" 
+    alt="MotoInvest Logo" 
+    className={`${className} object-contain`}
+  />
+);
+
 export const SendIcon = ({ className = "w-5 h-5" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
   </svg>
 );
 
+// Ícone de Moto real (SVG)
 export const MotoIcon = ({ className = "w-5 h-5" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M19.5 13c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5zm-15 0c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5zm1.18-1.55l1.09-3.28c.19-.58.74-.97 1.35-.97h4.76c.61 0 1.16.39 1.35.97l1.09 3.28c.08.24.3.4.55.4h.88c1.38 0 2.5 1.12 2.5 2.5v.75c0 .41-.34.75-.75.75h-.06c-.46-1.42-1.79-2.5-3.39-2.5s-2.93 1.08-3.39 2.5h-4.22c-.46-1.42-1.79-2.5-3.39-2.5s-2.93 1.08-3.39 2.5h-.06c-.41 0-.75-.34-.75-.75v-.75c0-1.38 1.12-2.5 2.5-2.5h.88c.25 0 .47-.16.55-.4zM12 2c4.41 0 8 3.59 8 8v1h-1v-1c0-3.86-3.14-7-7-7s-7 3.14-7 7v1h-1v-1c0-4.41 3.59-8 8-8z"/>
   </svg>
 );
 
