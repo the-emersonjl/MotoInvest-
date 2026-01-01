@@ -14,7 +14,6 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const DAYS_OF_WEEK = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-// Componente de Skeleton para simular carregamento
 const Skeleton = ({ className }: { className: string }) => (
   <div className={`animate-pulse bg-slate-800/50 rounded-2xl ${className}`} />
 );
@@ -25,7 +24,6 @@ const App: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [activeTab, setActiveTab] = useState<'chat' | 'ledger' | 'stats' | 'calendar' | 'help'>('chat');
   
-  // Loading States
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDataSyncing, setIsDataSyncing] = useState(false);
   
@@ -40,7 +38,6 @@ const App: React.FC = () => {
   const [onboardingData, setOnboardingData] = useState<Profile>({
     age: '', gender: '', experience: '', tool: '', days_week: '', hours_day: '',
     platforms: [], accident: false, challenge: '',
-    moto_oil_price: 45, moto_fuel_price: 5.80, moto_km_per_liter: 35,
     financial_goal: 5000, goal_name: 'Reserva de Emergência'
   });
 
@@ -100,16 +97,6 @@ const App: React.FC = () => {
     return { totalEarned, totalSpent, netProfit: totalEarned - totalSpent, currentBills };
   }, [dailyEarnings, dailyExpenses, bills, viewDate]);
 
-  const billsByWeek = useMemo(() => {
-    const weeks: Record<number, Bill[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
-    totals.currentBills.forEach(bill => {
-      const day = parseInt(bill.dueDate.split('-')[2]);
-      const weekNum = Math.ceil(day / 7);
-      weeks[Math.min(weekNum, 5)].push(bill);
-    });
-    return weeks;
-  }, [totals.currentBills]);
-
   const calendarDays = useMemo(() => {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -122,7 +109,6 @@ const App: React.FC = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) setCurrentUser({ email: session.user.email!, name: session.user.user_metadata?.name || 'Comandante' });
-      // Pequeno delay para garantir que a animação de entrada seja vista
       setTimeout(() => setIsInitialLoading(false), 1000);
     });
 
@@ -310,7 +296,6 @@ const App: React.FC = () => {
     processAIPrompt(`Fiz R$ ${earnVal} brutos e gastei R$ ${expVal}. Me ajuda a dividir esse lucro?`);
   };
 
-  // Splash Screen Refinada
   if (isInitialLoading) {
     return (
       <div className="h-screen bg-[#020617] flex flex-col items-center justify-center p-6 bg-animate">
@@ -377,15 +362,15 @@ const App: React.FC = () => {
               </div>
             </section>
             <section className="space-y-4">
-              <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Dados da Moto</label>
+              <label className="block text-xs font-black uppercase text-slate-400 tracking-widest">Qual o seu maior objetivo?</label>
               <div className="grid grid-cols-1 gap-4">
                 <div className="bg-white/5 p-4 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">Preço Gasolina (L)</span>
-                  <input type="number" step="0.01" value={onboardingData.moto_fuel_price} onChange={e => setOnboardingData({...onboardingData, moto_fuel_price: parseFloat(e.target.value)})} className="bg-transparent text-white w-full text-xl font-black outline-none" />
+                  <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">Nome da Meta (ex: Trocar de Moto)</span>
+                  <input type="text" value={onboardingData.goal_name} onChange={e => setOnboardingData({...onboardingData, goal_name: e.target.value})} className="bg-transparent text-white w-full text-xl font-black outline-none placeholder:text-white/20" placeholder="Ex: Viagem de Férias" />
                 </div>
                 <div className="bg-white/5 p-4 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">KM por litro</span>
-                  <input type="number" value={onboardingData.moto_km_per_liter} onChange={e => setOnboardingData({...onboardingData, moto_km_per_liter: parseInt(e.target.value)})} className="bg-transparent text-white w-full text-xl font-black outline-none" />
+                  <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">Valor do Sonho (R$)</span>
+                  <input type="number" value={onboardingData.financial_goal} onChange={e => setOnboardingData({...onboardingData, financial_goal: parseFloat(e.target.value)})} className="bg-transparent text-white w-full text-xl font-black outline-none" />
                 </div>
               </div>
             </section>
@@ -406,7 +391,7 @@ const App: React.FC = () => {
               <h1 className="text-xs font-black uppercase italic tracking-tighter">MotoInvest</h1>
               {isDataSyncing && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />}
             </div>
-            <p className="text-[9px] text-emerald-400 font-bold uppercase truncate max-w-[100px]">{currentUser.name}</p>
+            <p className="text-[9px] text-emerald-400 font-bold uppercase truncate max-w-[120px]">{currentUser.name}</p>
           </div>
         </div>
         <button onClick={() => supabase.auth.signOut()} className="p-2.5 bg-white/5 border border-white/10 rounded-xl active-scale"><LogoutIcon className="w-4 h-4 text-slate-400" /></button>
@@ -459,7 +444,7 @@ const App: React.FC = () => {
               </div>
 
               <div className="bg-rose-600/90 p-8 rounded-[40px] shadow-2xl border border-white/10 active-scale group">
-                 <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-widest group-focus-within:text-white">Gastos (Gasosa/Refeição)</label>
+                 <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-widest group-focus-within:text-white">Gastos do Dia</label>
                  <div className="flex items-center gap-3">
                    <span className="text-2xl font-black text-white/50">R$</span>
                    <input type="number" placeholder="0,00" value={tempExpense} onChange={e => setTempExpense(e.target.value)} className="w-full bg-transparent text-5xl font-black text-white outline-none placeholder:text-white/20" />
@@ -501,32 +486,6 @@ const App: React.FC = () => {
                    })}
                 </div>
              </div>
-
-             {selectedDay && (
-               <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-in slide-in-from-bottom duration-300">
-                 <div className="sticky top-0 p-8 pb-4 flex justify-between items-center border-b border-white/5 bg-slate-950/80 backdrop-blur-xl z-20">
-                    <div>
-                      <h3 className="font-black uppercase italic text-emerald-500 text-2xl tracking-tighter">Dia {selectedDay}</h3>
-                      <p className="text-[10px] font-black text-slate-500 uppercase">{MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}</p>
-                    </div>
-                    <button onClick={() => setSelectedDay(null)} className="px-6 py-3 bg-rose-600 rounded-2xl font-black text-[10px] uppercase shadow-xl active-scale">FECHAR</button>
-                 </div>
-                 <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar pb-10">
-                   {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).map(bill => (
-                     <div key={bill.id} className="bg-slate-900 border border-white/5 p-6 rounded-[32px] flex justify-between items-center shadow-2xl animate-in fade-in slide-in-from-right-4">
-                       <div><p className={`font-black uppercase text-base ${bill.isPaid ? 'line-through text-slate-600' : 'text-white'}`}>{bill.name}</p><p className="text-sm font-bold text-emerald-500 mt-1">R$ {bill.amount.toFixed(2)}</p></div>
-                       <div className="flex items-center gap-3">
-                         <button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-6 py-3 rounded-2xl text-[10px] font-black transition-all ${bill.isPaid ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button>
-                         <button onClick={() => deleteBill(bill.id)} className="p-3 text-rose-500 bg-rose-500/10 rounded-2xl active-scale"><TrashIcon className="w-5 h-5" /></button>
-                       </div>
-                     </div>
-                   ))}
-                   {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).length === 0 && (
-                     <div className="py-20 text-center opacity-30 italic text-sm">Nenhum boleto para este dia.</div>
-                   )}
-                 </div>
-               </div>
-             )}
           </div>
         )}
 
@@ -537,44 +496,51 @@ const App: React.FC = () => {
             {!userProfile ? (
               <Skeleton className="h-48 w-full" />
             ) : (
-              <div className="bg-slate-900/60 border border-white/5 p-8 rounded-[40px] shadow-2xl">
-                <div className="flex justify-between items-end mb-4">
+              <div className="bg-slate-900/60 border border-white/5 p-8 rounded-[40px] shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5"><GraphIcon className="w-32 h-32" /></div>
+                <div className="flex justify-between items-end mb-4 relative z-10">
                   <div>
-                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-1">Objetivo Atual</p>
-                    <h3 className="text-xl font-black uppercase tracking-tighter italic">{userProfile?.goal_name || 'Minha Meta'}</h3>
+                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-1 tracking-[0.2em]">Objetivo Atual</p>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter italic leading-tight">{userProfile?.goal_name || 'Minha Meta'}</h3>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-black text-emerald-500">{((totals.netProfit / (userProfile?.financial_goal || 1)) * 100).toFixed(1)}%</p>
+                    <p className="text-2xl font-black text-emerald-500">{((totals.netProfit / (userProfile?.financial_goal || 1)) * 100).toFixed(1)}%</p>
                   </div>
                 </div>
-                <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full transition-all duration-1000 ease-out" style={{ width: `${Math.min(100, (totals.netProfit / (userProfile?.financial_goal || 1)) * 100)}%` }} />
+                <div className="w-full bg-slate-800 h-4 rounded-full overflow-hidden relative z-10">
+                  <div className="bg-emerald-500 h-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(16,185,129,0.5)]" style={{ width: `${Math.min(100, (totals.netProfit / (userProfile?.financial_goal || 1)) * 100)}%` }} />
                 </div>
-                <p className="text-[10px] font-bold text-slate-500 mt-4 uppercase text-center">R$ {totals.netProfit.toFixed(2)} acumulados de R$ {userProfile?.financial_goal?.toFixed(2)}</p>
+                <div className="flex justify-between items-center mt-6 relative z-10">
+                  <div className="text-left">
+                    <p className="text-[9px] font-black text-slate-500 uppercase">Acumulado</p>
+                    <p className="text-lg font-black text-white">R$ {totals.netProfit.toFixed(2)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-500 uppercase">Alvo</p>
+                    <p className="text-lg font-black text-slate-400">R$ {userProfile?.financial_goal?.toFixed(2)}</p>
+                  </div>
+                </div>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 p-6 rounded-[32px] text-center border border-white/5">
-                <p className="text-[9px] font-black text-emerald-400 uppercase">Ganhos Diários</p>
+                <p className="text-[9px] font-black text-emerald-400 uppercase">Total Ganhos</p>
                 <p className="text-xl font-black">R$ {totals.totalEarned.toFixed(2)}</p>
               </div>
               <div className="bg-white/5 p-6 rounded-[32px] text-center border border-white/5">
-                <p className="text-[9px] font-black text-rose-400 uppercase">Gastos/Custos</p>
+                <p className="text-[9px] font-black text-rose-400 uppercase">Total Gastos</p>
                 <p className="text-xl font-black text-rose-300">R$ {totals.totalSpent.toFixed(2)}</p>
               </div>
             </div>
             
-            <div className="bg-emerald-600/10 border border-emerald-500/20 p-8 rounded-[40px] flex justify-around items-center">
-                 <div className="text-center">
-                   <p className="text-2xl font-black italic">R$ {(userProfile?.moto_fuel_price! / userProfile?.moto_km_per_liter!).toFixed(2)}</p>
-                   <p className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Custo/KM</p>
-                 </div>
-                 <div className="w-[1px] h-10 bg-white/10" />
-                 <div className="text-center">
-                   <p className="text-2xl font-black italic">{userProfile?.moto_km_per_liter || 0} KM</p>
-                   <p className="text-[8px] font-black uppercase text-slate-500 tracking-widest">por Litro</p>
-                 </div>
+            <div className="bg-slate-900/40 p-8 rounded-[40px] border border-white/5 text-center">
+              <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Estimativa para o Sonho</p>
+              {totals.netProfit > 0 ? (
+                <p className="text-sm font-bold italic">No ritmo atual, você completa sua meta em breve! Continue firme no corre. 🚀</p>
+              ) : (
+                <p className="text-sm font-bold italic opacity-50 italic">Feche seu primeiro dia para vermos sua evolução!</p>
+              )}
             </div>
           </div>
         )}
@@ -584,28 +550,18 @@ const App: React.FC = () => {
             <h2 className="text-4xl font-black italic uppercase">Ajustes</h2>
             
             <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[40px] space-y-6">
-               <h3 className="text-xs font-black uppercase text-emerald-500 tracking-[0.2em]">Telemetria</h3>
+               <h3 className="text-xs font-black uppercase text-emerald-500 tracking-[0.2em]">Mudar Objetivo</h3>
                <div className="space-y-4">
-                 {[
-                   { label: 'Gasolina (R$/L)', val: userProfile?.moto_fuel_price, key: 'moto_fuel_price', step: '0.01' },
-                   { label: 'Preço Óleo (R$)', val: userProfile?.moto_oil_price, key: 'moto_oil_price', step: '1' },
-                   { label: 'Consumo (KM/L)', val: userProfile?.moto_km_per_liter, key: 'moto_km_per_liter', step: '1' }
-                 ].map(item => (
-                   <div key={item.key} className="bg-white/5 p-4 rounded-2xl flex justify-between items-center active-scale">
-                     <span className="text-[11px] font-black uppercase text-slate-400">{item.label}</span>
-                     <input type="number" step={item.step} value={item.val} onChange={e => updateMotoProfile({ [item.key]: parseFloat(e.target.value) })} className="bg-transparent text-right font-black text-emerald-400 outline-none w-20 text-lg" />
+                 <div>
+                   <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1">Nome do Sonho</label>
+                   <input type="text" placeholder="Ex: Moto Nova, Viagem, Reserva" value={userProfile?.goal_name} onChange={e => updateMotoProfile({ goal_name: e.target.value })} className="w-full bg-white/5 rounded-2xl p-4 text-sm font-black outline-none border border-white/5 focus:ring-2 ring-emerald-500/30 transition-all" />
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1">Valor Alvo (R$)</label>
+                   <div className="bg-white/5 p-4 rounded-2xl flex justify-between items-center active-scale">
+                     <span className="text-[11px] font-black uppercase text-slate-400">R$</span>
+                     <input type="number" value={userProfile?.financial_goal} onChange={e => updateMotoProfile({ financial_goal: parseFloat(e.target.value) })} className="bg-transparent text-right font-black text-emerald-500 outline-none w-32 text-lg" />
                    </div>
-                 ))}
-               </div>
-            </div>
-
-            <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[40px] space-y-6">
-               <h3 className="text-xs font-black uppercase text-emerald-500 tracking-[0.2em]">Objetivo</h3>
-               <div className="space-y-4">
-                 <input type="text" placeholder="Nome do seu sonho" value={userProfile?.goal_name} onChange={e => updateMotoProfile({ goal_name: e.target.value })} className="w-full bg-white/5 rounded-2xl p-4 text-xs font-black outline-none border border-white/5 focus:ring-2 ring-emerald-500/30 transition-all" />
-                 <div className="bg-white/5 p-4 rounded-2xl flex justify-between items-center active-scale">
-                   <span className="text-[11px] font-black uppercase text-slate-400">Valor Alvo (R$)</span>
-                   <input type="number" value={userProfile?.financial_goal} onChange={e => updateMotoProfile({ financial_goal: parseFloat(e.target.value) })} className="bg-transparent text-right font-black text-emerald-500 outline-none w-32 text-lg" />
                  </div>
                </div>
             </div>
@@ -614,8 +570,8 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-2xl transition-all ${notifsEnabled ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}><BellIcon className="w-6 h-6" /></div>
                 <div className="flex-1">
-                  <p className="text-xs font-black uppercase italic">Lembretes</p>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase">{notifsEnabled ? 'Ativados' : 'Silenciados'}</p>
+                  <p className="text-xs font-black uppercase italic">Notificações</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">{notifsEnabled ? 'Ativadas' : 'Silenciadas'}</p>
                 </div>
                 {notifPermission === 'granted' ? (
                   <button onClick={toggleNotifs} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all active-scale ${notifsEnabled ? 'bg-rose-600' : 'bg-emerald-600'}`}>
@@ -629,6 +585,44 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Modal de Detalhes do Dia */}
+      {selectedDay && (
+        <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="sticky top-0 p-6 pb-4 flex justify-between items-center border-b border-white/5 bg-slate-950/80 backdrop-blur-xl z-[110] safe-top">
+            <div>
+              <h3 className="font-black uppercase italic text-emerald-500 text-2xl tracking-tighter">Dia {selectedDay}</h3>
+              <p className="text-[10px] font-black text-slate-500 uppercase">{MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}</p>
+            </div>
+            <button 
+              onClick={() => setSelectedDay(null)} 
+              className="px-6 py-3 bg-rose-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_4px_15px_rgba(225,29,72,0.4)] active-scale transition-all"
+            >
+              FECHAR
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar pb-10">
+            {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).map(bill => (
+              <div key={bill.id} className="bg-slate-900 border border-white/5 p-6 rounded-[32px] flex justify-between items-center shadow-2xl animate-in fade-in slide-in-from-right-4">
+                <div className="flex-1 mr-4">
+                  <p className={`font-black uppercase text-base leading-tight ${bill.isPaid ? 'line-through text-slate-600' : 'text-white'}`}>{bill.name}</p>
+                  <p className="text-sm font-bold text-emerald-500 mt-1">R$ {bill.amount.toFixed(2)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-5 py-3 rounded-2xl text-[10px] font-black transition-all ${bill.isPaid ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button>
+                  <button onClick={() => deleteBill(bill.id)} className="p-3 text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-2xl active-scale transition-all"><TrashIcon className="w-5 h-5" /></button>
+                </div>
+              </div>
+            ))}
+            {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).length === 0 && (
+              <div className="py-20 text-center flex flex-col items-center gap-4">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center opacity-20"><CalendarIcon className="w-8 h-8" /></div>
+                <p className="opacity-30 italic text-sm font-bold uppercase tracking-widest">Nenhuma conta para este dia.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <nav className="bg-slate-950/80 backdrop-blur-3xl border-t border-white/5 px-2 py-6 flex justify-around items-center sticky bottom-0 z-50">
         {[

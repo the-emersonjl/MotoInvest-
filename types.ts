@@ -40,10 +40,6 @@ export interface Profile {
   platforms: string[];
   accident: boolean;
   challenge: string;
-  // Novos campos
-  moto_oil_price?: number;
-  moto_fuel_price?: number;
-  moto_km_per_liter?: number;
   financial_goal?: number;
   goal_name?: string;
 }
