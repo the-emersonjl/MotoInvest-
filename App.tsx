@@ -60,6 +60,11 @@ const App: React.FC = () => {
   const [isAILoading, setIsAILoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
+  // States for manual bill adding
+  const [isAddingManualBill, setIsAddingManualBill] = useState(false);
+  const [manualBillName, setManualBillName] = useState('');
+  const [manualBillAmount, setManualBillAmount] = useState('');
+
   const mentorService = useRef<FinancialMentorService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -222,6 +227,27 @@ const App: React.FC = () => {
     const { error } = await supabase.from('bills').delete().eq('id', id);
     if (!error) {
       setBills(prev => prev.filter(b => b.id !== id));
+    }
+    setIsDataSyncing(false);
+  };
+
+  const handleManualAddBill = async () => {
+    if (!manualBillName || !manualBillAmount || !selectedDay || !session?.user) return;
+    setIsDataSyncing(true);
+    const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    const { data, error } = await supabase.from('bills').insert([{
+      user_id: session.user.id,
+      name: manualBillName,
+      amount: parseFloat(manualBillAmount),
+      dueDate: dateStr,
+      isPaid: false
+    }]).select();
+
+    if (data && !error) {
+      setBills(prev => [...prev, data[0]]);
+      setManualBillName('');
+      setManualBillAmount('');
+      setIsAddingManualBill(false);
     }
     setIsDataSyncing(false);
   };
@@ -610,31 +636,84 @@ const App: React.FC = () => {
               <p className="text-[10px] font-black text-slate-500 uppercase">{MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}</p>
             </div>
             <button 
-              onClick={() => setSelectedDay(null)} 
+              onClick={() => {
+                setSelectedDay(null);
+                setIsAddingManualBill(false);
+              }} 
               className="px-6 py-3 bg-rose-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_4px_15px_rgba(225,29,72,0.4)] active-scale transition-all"
             >
               FECHAR
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar pb-10">
-            {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).map(bill => (
-              <div key={bill.id} className="bg-slate-900 border border-white/5 p-6 rounded-[32px] flex justify-between items-center shadow-2xl animate-in fade-in slide-in-from-right-4">
-                <div className="flex-1 mr-4">
-                  <p className={`font-black uppercase text-base leading-tight ${bill.isPaid ? 'line-through text-slate-600' : 'text-white'}`}>{bill.name}</p>
-                  <p className="text-sm font-bold text-emerald-500 mt-1">R$ {bill.amount.toFixed(2)}</p>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-10">
+            {/* Action Bar for Manual Add */}
+            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              {!isAddingManualBill ? (
+                <button 
+                  onClick={() => setIsAddingManualBill(true)}
+                  className="w-full bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 py-4 rounded-3xl font-black uppercase text-xs flex items-center justify-center gap-2 active-scale transition-all"
+                >
+                  <span className="text-xl">+</span> ADICIONAR CONTA
+                </button>
+              ) : (
+                <div className="bg-slate-900 border border-emerald-500/30 p-6 rounded-[32px] space-y-4 shadow-2xl animate-in zoom-in duration-300">
+                  <h4 className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Nova Conta Manual</h4>
+                  <input 
+                    type="text" 
+                    placeholder="Descrição (ex: MEI, Gasolina)" 
+                    value={manualBillName}
+                    onChange={e => setManualBillName(e.target.value)}
+                    className="w-full bg-white/5 rounded-2xl p-4 text-sm font-black outline-none border border-white/5 focus:ring-2 ring-emerald-500/30"
+                  />
+                  <div className="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5">
+                    <span className="text-[11px] font-black uppercase text-slate-400 mr-2">R$</span>
+                    <input 
+                      type="number" 
+                      placeholder="0,00"
+                      value={manualBillAmount}
+                      onChange={e => setManualBillAmount(e.target.value)}
+                      className="flex-1 bg-transparent text-right font-black text-emerald-500 outline-none text-lg"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button 
+                      onClick={handleManualAddBill}
+                      className="flex-1 bg-emerald-600 py-4 rounded-2xl font-black uppercase text-[10px] active-scale shadow-lg shadow-emerald-500/20"
+                    >
+                      SALVAR
+                    </button>
+                    <button 
+                      onClick={() => setIsAddingManualBill(false)}
+                      className="px-6 bg-white/5 py-4 rounded-2xl font-black uppercase text-[10px] active-scale"
+                    >
+                      CANCELAR
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-5 py-3 rounded-2xl text-[10px] font-black transition-all ${bill.isPaid ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button>
-                  <button onClick={() => deleteBill(bill.id)} className="p-3 text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-2xl active-scale transition-all"><TrashIcon className="w-5 h-5" /></button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).map(bill => (
+                <div key={bill.id} className="bg-slate-900 border border-white/5 p-6 rounded-[32px] flex justify-between items-center shadow-2xl animate-in fade-in slide-in-from-right-4">
+                  <div className="flex-1 mr-4">
+                    <p className={`font-black uppercase text-base leading-tight ${bill.isPaid ? 'line-through text-slate-600' : 'text-white'}`}>{bill.name}</p>
+                    <p className="text-sm font-bold text-emerald-500 mt-1">R$ {bill.amount.toFixed(2)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-5 py-3 rounded-2xl text-[10px] font-black transition-all ${bill.isPaid ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button>
+                    <button onClick={() => deleteBill(bill.id)} className="p-3 text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-2xl active-scale transition-all"><TrashIcon className="w-5 h-5" /></button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).length === 0 && (
-              <div className="py-20 text-center flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center opacity-20"><CalendarIcon className="w-8 h-8" /></div>
-                <p className="opacity-30 italic text-sm font-bold uppercase tracking-widest">Nenhuma conta para este dia.</p>
-              </div>
-            )}
+              ))}
+              {bills.filter(b => b.dueDate === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`).length === 0 && !isAddingManualBill && (
+                <div className="py-20 text-center flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center opacity-20"><CalendarIcon className="w-8 h-8" /></div>
+                  <p className="opacity-30 italic text-sm font-bold uppercase tracking-widest">Nenhuma conta para este dia.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
