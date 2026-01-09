@@ -14,8 +14,8 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DEV_WHATSAPP = "5511962952615"; 
-// COLOQUE SEU LINK DE PAGAMENTO DO MERCADO PAGO AQUI
-const MERCADO_PAGO_LINK = "https://www.mercadopago.com.br"; 
+// LINK DE PAGAMENTO OFICIAL ATUALIZADO
+const MERCADO_PAGO_LINK = "https://link.mercadopago.com.br/motoinvest"; 
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -286,7 +286,7 @@ const App: React.FC = () => {
           </div>
           
           <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] space-y-4 shadow-2xl">
-            {/* BOTÃO MERCADO PAGO */}
+            {/* BOTÃO MERCADO PAGO COM LINK ATUALIZADO */}
             <a 
               href={MERCADO_PAGO_LINK} 
               target="_blank" 
