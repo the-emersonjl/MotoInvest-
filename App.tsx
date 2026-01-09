@@ -14,8 +14,7 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DEV_WHATSAPP = "5511962952615"; 
-// LINK DE PAGAMENTO OFICIAL ATUALIZADO
-const MERCADO_PAGO_LINK = "https://link.mercadopago.com.br/motoinvest"; 
+const MP_PREFERENCE_ID = "696871088-f985483b-f7b9-4d3c-a2d1-1406ef814984";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -58,6 +57,7 @@ const App: React.FC = () => {
   const mentorService = useRef<FinancialMentorService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const mpButtonContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -66,6 +66,21 @@ const App: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'chat') setTimeout(scrollToBottom, 200);
   }, [messages, activeTab, scrollToBottom]);
+
+  // Injeta o script do Mercado Pago na tela de bloqueio
+  useEffect(() => {
+    if (session?.user && authStatus.isAuthorized === false && mpButtonContainerRef.current) {
+      const container = mpButtonContainerRef.current;
+      if (container.children.length === 0) {
+        const script = document.createElement('script');
+        script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
+        script.setAttribute('data-preference-id', MP_PREFERENCE_ID);
+        script.setAttribute('data-source', "button");
+        script.async = true;
+        container.appendChild(script);
+      }
+    }
+  }, [session, authStatus.isAuthorized]);
 
   const checkAuthorization = async (userEmail: string) => {
     try {
@@ -286,14 +301,10 @@ const App: React.FC = () => {
           </div>
           
           <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] space-y-4 shadow-2xl">
-            {/* BOTÃO MERCADO PAGO COM LINK ATUALIZADO */}
-            <a 
-              href={MERCADO_PAGO_LINK} 
-              target="_blank" 
-              className="w-full bg-[#009EE3] py-6 rounded-3xl font-black text-xs uppercase text-white shadow-[0_10px_30px_rgba(0,158,227,0.3)] flex items-center justify-center gap-4 active-scale transition-all"
-            >
-              ADQUIRIR ACESSO AGORA 💳
-            </a>
+            {/* CONTAINER PARA O BOTÃO DO MERCADO PAGO INJETADO VIA SCRIPT */}
+            <div ref={mpButtonContainerRef} className="w-full min-h-[60px] flex items-center justify-center">
+               {/* O botão do Mercado Pago será injetado aqui */}
+            </div>
 
             <div className="flex items-center gap-4 py-2">
               <div className="flex-1 h-px bg-white/10" />
