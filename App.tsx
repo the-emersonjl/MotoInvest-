@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { supabase } from './services/supabaseClient';
 import { FinancialMentorService } from './services/geminiService';
 import { Role, Message, Bill, User, Expense, Profile } from './types';
-import { 
-  SendIcon, WalletIcon, GraphIcon, BotIcon, 
+import {
+  SendIcon, WalletIcon, GraphIcon, BotIcon,
   TrashIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon,
   LogoutIcon, SupportIcon, BellIcon, CameraIcon, MicrophoneIcon,
   AppLogo, WhatsAppIcon
@@ -13,8 +13,8 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const DEV_WHATSAPP = "5511962952615"; 
-const MP_PREFERENCE_ID = "696871088-f985483b-f7b9-4d3c-a2d1-1406ef814984";
+const DEV_WHATSAPP = "5511962952615";
+const MP_PREFERENCE_ID = "696871088-3bc7ee3e-48d1-4b43-8f2e-6330fd7da74c";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -31,10 +31,10 @@ const App: React.FC = () => {
   const [authStatus, setAuthStatus] = useState<{ isAuthorized: boolean; expiresAt: string | null }>({ isAuthorized: false, expiresAt: null });
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [activeTab, setActiveTab] = useState<'chat' | 'ledger' | 'stats' | 'calendar' | 'help'>('chat');
-  
+
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDataSyncing, setIsDataSyncing] = useState(false);
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -47,12 +47,12 @@ const App: React.FC = () => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [viewDate, setViewDate] = useState(new Date());
-  
+
   const [inputText, setInputText] = useState('');
   const [tempEarning, setTempEarning] = useState('');
   const [tempExpense, setTempExpense] = useState('');
   const [isAILoading, setIsAILoading] = useState(false);
-  const [pendingMedia, setPendingMedia] = useState<{data: string, mimeType: string}[]>([]);
+  const [pendingMedia, setPendingMedia] = useState<{ data: string, mimeType: string }[]>([]);
 
   const mentorService = useRef<FinancialMentorService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ const App: React.FC = () => {
         .select('email, expires_at')
         .eq('email', userEmail.toLowerCase())
         .single();
-      
+
       if (error || !data) {
         setAuthStatus({ isAuthorized: false, expiresAt: null });
         return;
@@ -98,9 +98,9 @@ const App: React.FC = () => {
       const expirationDate = new Date(data.expires_at);
       const isExpired = expirationDate < new Date();
 
-      setAuthStatus({ 
-        isAuthorized: !isExpired, 
-        expiresAt: data.expires_at 
+      setAuthStatus({
+        isAuthorized: !isExpired,
+        expiresAt: data.expires_at
       });
     } catch (e) {
       setAuthStatus({ isAuthorized: false, expiresAt: null });
@@ -112,9 +112,9 @@ const App: React.FC = () => {
       setSession(session);
       if (session?.user) {
         const userEmail = session.user.email!;
-        setCurrentUser({ 
-          email: userEmail, 
-          name: session.user.user_metadata?.name || 'Comandante' 
+        setCurrentUser({
+          email: userEmail,
+          name: session.user.user_metadata?.name || 'Comandante'
         });
         checkAuthorization(userEmail);
       }
@@ -124,15 +124,15 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
-        setCurrentUser({ 
-          email: session.user.email!, 
-          name: session.user.user_metadata?.name || 'Comandante' 
+        setCurrentUser({
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || 'Comandante'
         });
         checkAuthorization(session.user.email!);
-      } else { 
-        setCurrentUser(null); 
+      } else {
+        setCurrentUser(null);
         setAuthStatus({ isAuthorized: false, expiresAt: null });
-        setMessages([]); 
+        setMessages([]);
       }
     });
     return () => subscription.unsubscribe();
@@ -151,17 +151,17 @@ const App: React.FC = () => {
         supabase.from('expenses').select('*').eq('user_id', session.user.id).order('date', { ascending: false }),
         supabase.from('bills').select('*').eq('user_id', session.user.id).order('dueDate', { ascending: true })
       ]);
-      
+
       if (msgsRes.data && msgsRes.data.length > 0) {
         setMessages(msgsRes.data.map(m => ({ role: m.role, text: m.text, timestamp: m.timestamp })));
       } else {
-        setMessages([{ 
-          role: Role.MODEL, 
-          text: `Salve, **${currentUser?.name || 'Comandante'}**! 🏍️\nSou seu mentor IA. Assinatura confirmada! Como tá o corre hoje?`, 
-          timestamp: new Date().toISOString() 
+        setMessages([{
+          role: Role.MODEL,
+          text: `Salve, **${currentUser?.name || 'Comandante'}**! 🏍️\nSou seu mentor IA. Assinatura confirmada! Como tá o corre hoje?`,
+          timestamp: new Date().toISOString()
         }]);
       }
-      
+
       if (earnsRes.data) setDailyEarnings(earnsRes.data);
       if (expsRes.data) setDailyExpenses(earnsRes.data);
       if (blsRes.data) setBills(blsRes.data);
@@ -182,17 +182,17 @@ const App: React.FC = () => {
   const totals = useMemo(() => {
     const month = viewDate.getMonth();
     const year = viewDate.getFullYear();
-    
+
     const earnings = dailyEarnings.filter(e => {
       const d = new Date(e.date + 'T12:00:00Z');
       return d.getUTCMonth() === month && d.getUTCFullYear() === year;
     });
-    
+
     const expenses = dailyExpenses.filter(e => {
       const d = new Date(e.date + 'T12:00:00Z');
       return d.getUTCMonth() === month && d.getUTCFullYear() === year;
     });
-    
+
     const currentBills = bills.filter(b => {
       const [bYear, bMonth] = b.dueDate.split('-').map(Number);
       return (bMonth - 1) === month && bYear === year;
@@ -210,7 +210,7 @@ const App: React.FC = () => {
     const month = viewDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     const days = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
@@ -299,11 +299,11 @@ const App: React.FC = () => {
               Fala, Comandante! O e-mail <span className="text-emerald-400 font-bold">{session.user.email}</span> ainda não está liberado para usar o MotoInvest.
             </p>
           </div>
-          
+
           <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] space-y-4 shadow-2xl">
             {/* CONTAINER PARA O BOTÃO DO MERCADO PAGO INJETADO VIA SCRIPT */}
             <div ref={mpButtonContainerRef} className="w-full min-h-[60px] flex items-center justify-center">
-               {/* O botão do Mercado Pago será injetado aqui */}
+              {/* O botão do Mercado Pago será injetado aqui */}
             </div>
 
             <div className="flex items-center gap-4 py-2">
@@ -313,9 +313,9 @@ const App: React.FC = () => {
             </div>
 
             {/* BOTÃO SUPORTE WHATSAPP */}
-            <a 
-              href={`https://wa.me/${DEV_WHATSAPP}?text=Salve!%20Fiz%20o%20pagamento%20e%20quero%20liberar%20meu%20acesso.%20Email:%20${session.user.email}`} 
-              target="_blank" 
+            <a
+              href={`https://wa.me/${DEV_WHATSAPP}?text=Salve!%20Fiz%20o%20pagamento%20e%20quero%20liberar%20meu%20acesso.%20Email:%20${session.user.email}`}
+              target="_blank"
               className="w-full bg-white/5 border border-white/10 py-5 rounded-3xl font-black text-xs uppercase text-slate-300 flex items-center justify-center gap-4 active-scale transition-all"
             >
               <WhatsAppIcon className="w-5 h-5" /> JÁ PAGUEI / SUPORTE
@@ -384,27 +384,27 @@ const App: React.FC = () => {
             <div className="space-y-6">
               <div className="bg-emerald-600/90 p-8 rounded-[40px] border border-white/10"><label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-widest">Ganhos Hoje</label><div className="flex items-center gap-3"><span className="text-2xl font-black text-white/50">R$</span><input type="number" placeholder="0,00" value={tempEarning} onChange={e => setTempEarning(e.target.value)} className="w-full bg-transparent text-5xl font-black text-white outline-none" /></div></div>
               <div className="bg-rose-600/90 p-8 rounded-[40px] border border-white/10"><label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-widest">Gastos Hoje</label><div className="flex items-center gap-3"><span className="text-2xl font-black text-white/50">R$</span><input type="number" placeholder="0,00" value={tempExpense} onChange={e => setTempExpense(e.target.value)} className="w-full bg-transparent text-5xl font-black text-white outline-none" /></div></div>
-              <button onClick={() => { const e = parseFloat(tempEarning) || 0; const x = parseFloat(tempExpense) || 0; if (!e && !x) return; setIsDataSyncing(true); const d = new Date().toLocaleDateString('en-CA'); Promise.all([ e ? supabase.from('earnings').insert([{ user_id: session.user.id, value: e, date: d }]) : Promise.resolve(), x ? supabase.from('expenses').insert([{ user_id: session.user.id, value: x, date: d }]) : Promise.resolve() ]).then(() => { setTempEarning(''); setTempExpense(''); loadAllData(); setActiveTab('chat'); processAIPrompt(`Fechei o dia! Ganhos: R$ ${e} | Gastos: R$ ${x}.`); }); }} className="w-full bg-white text-slate-900 py-6 rounded-3xl font-black uppercase shadow-2xl active-scale">SALVAR</button>
+              <button onClick={() => { const e = parseFloat(tempEarning) || 0; const x = parseFloat(tempExpense) || 0; if (!e && !x) return; setIsDataSyncing(true); const d = new Date().toLocaleDateString('en-CA'); Promise.all([e ? supabase.from('earnings').insert([{ user_id: session.user.id, value: e, date: d }]) : Promise.resolve(), x ? supabase.from('expenses').insert([{ user_id: session.user.id, value: x, date: d }]) : Promise.resolve()]).then(() => { setTempEarning(''); setTempExpense(''); loadAllData(); setActiveTab('chat'); processAIPrompt(`Fechei o dia! Ganhos: R$ ${e} | Gastos: R$ ${x}.`); }); }} className="w-full bg-white text-slate-900 py-6 rounded-3xl font-black uppercase shadow-2xl active-scale">SALVAR</button>
             </div>
           </div>
         )}
         {activeTab === 'calendar' && (
           <div className="h-full p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8 pb-24">
-             <div className="flex justify-between items-center"><h2 className="text-4xl font-black italic uppercase tracking-tighter">Agenda</h2><div className="flex items-center gap-4 bg-slate-900/80 px-4 py-2 rounded-2xl border border-white/5"><button onClick={() => navigateMonth(-1)} className="p-1 active-scale text-emerald-500"><ChevronLeftIcon className="w-6 h-6" /></button><div className="flex flex-col items-center min-w-[100px]"><span className="text-[8px] font-black uppercase text-slate-500">{viewDate.getFullYear()}</span><span className="text-xs font-black uppercase text-white">{MONTHS[viewDate.getMonth()]}</span></div><button onClick={() => navigateMonth(1)} className="p-1 active-scale text-emerald-500"><ChevronRightIcon className="w-6 h-6" /></button></div></div>
-             <div className="bg-slate-900/50 p-6 rounded-[32px] border border-white/5">
-                <div className="grid grid-cols-7 gap-1 mb-4">{WEEKDAYS.map(w => <span key={w} className="text-[8px] font-black uppercase text-slate-600 text-center">{w}</span>)}</div>
-                <div className="grid grid-cols-7 gap-1">
-                   {calendarDays.map((day, idx) => {
-                     const isToday = day && day === new Date().getDate() && viewDate.getMonth() === new Date().getMonth();
-                     const hasBill = day && totals.currentBills.some(b => new Date(b.dueDate + 'T12:00:00Z').getUTCDate() === day);
-                     return (<div key={idx} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-[10px] font-black relative ${day ? 'bg-white/5' : ''} ${isToday ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>{day}{hasBill && !isToday && <div className="absolute bottom-1 w-1 h-1 bg-emerald-500 rounded-full" />}</div>);
-                   })}
-                </div>
-             </div>
-             <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-[32px]"><p className="text-[10px] font-black uppercase text-emerald-500 mb-1 tracking-widest">Contas Pendentes</p><p className="text-3xl font-black text-white italic">R$ {totals.unpaidBillsTotal.toFixed(2)}</p></div>
-             <div className="space-y-4">{totals.currentBills.map(bill => (
-               <div key={bill.id} className={`bg-slate-900 border ${bill.isPaid ? 'border-emerald-500/30' : 'border-white/5'} p-6 rounded-[32px] flex justify-between items-center`}><div className="flex gap-4 items-center"><div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${bill.isPaid ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}><CalendarIcon className="w-5 h-5" /></div><div><p className={`font-black uppercase text-xs tracking-tight ${bill.isPaid ? 'line-through text-slate-500' : 'text-white'}`}>{bill.name}</p><p className="text-[10px] font-bold text-slate-500">{new Date(bill.dueDate + 'T12:00:00Z').toLocaleDateString('pt-BR')}</p><p className={`text-base font-black ${bill.isPaid ? 'text-emerald-500/50' : 'text-emerald-500'}`}>R$ {bill.amount.toFixed(2)}</p></div></div><button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase active-scale ${bill.isPaid ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/5 border border-white/10 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button></div>
-             ))}</div>
+            <div className="flex justify-between items-center"><h2 className="text-4xl font-black italic uppercase tracking-tighter">Agenda</h2><div className="flex items-center gap-4 bg-slate-900/80 px-4 py-2 rounded-2xl border border-white/5"><button onClick={() => navigateMonth(-1)} className="p-1 active-scale text-emerald-500"><ChevronLeftIcon className="w-6 h-6" /></button><div className="flex flex-col items-center min-w-[100px]"><span className="text-[8px] font-black uppercase text-slate-500">{viewDate.getFullYear()}</span><span className="text-xs font-black uppercase text-white">{MONTHS[viewDate.getMonth()]}</span></div><button onClick={() => navigateMonth(1)} className="p-1 active-scale text-emerald-500"><ChevronRightIcon className="w-6 h-6" /></button></div></div>
+            <div className="bg-slate-900/50 p-6 rounded-[32px] border border-white/5">
+              <div className="grid grid-cols-7 gap-1 mb-4">{WEEKDAYS.map(w => <span key={w} className="text-[8px] font-black uppercase text-slate-600 text-center">{w}</span>)}</div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((day, idx) => {
+                  const isToday = day && day === new Date().getDate() && viewDate.getMonth() === new Date().getMonth();
+                  const hasBill = day && totals.currentBills.some(b => new Date(b.dueDate + 'T12:00:00Z').getUTCDate() === day);
+                  return (<div key={idx} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-[10px] font-black relative ${day ? 'bg-white/5' : ''} ${isToday ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>{day}{hasBill && !isToday && <div className="absolute bottom-1 w-1 h-1 bg-emerald-500 rounded-full" />}</div>);
+                })}
+              </div>
+            </div>
+            <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-[32px]"><p className="text-[10px] font-black uppercase text-emerald-500 mb-1 tracking-widest">Contas Pendentes</p><p className="text-3xl font-black text-white italic">R$ {totals.unpaidBillsTotal.toFixed(2)}</p></div>
+            <div className="space-y-4">{totals.currentBills.map(bill => (
+              <div key={bill.id} className={`bg-slate-900 border ${bill.isPaid ? 'border-emerald-500/30' : 'border-white/5'} p-6 rounded-[32px] flex justify-between items-center`}><div className="flex gap-4 items-center"><div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${bill.isPaid ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}><CalendarIcon className="w-5 h-5" /></div><div><p className={`font-black uppercase text-xs tracking-tight ${bill.isPaid ? 'line-through text-slate-500' : 'text-white'}`}>{bill.name}</p><p className="text-[10px] font-bold text-slate-500">{new Date(bill.dueDate + 'T12:00:00Z').toLocaleDateString('pt-BR')}</p><p className={`text-base font-black ${bill.isPaid ? 'text-emerald-500/50' : 'text-emerald-500'}`}>R$ {bill.amount.toFixed(2)}</p></div></div><button onClick={() => toggleBillPaid(bill.id, bill.isPaid)} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase active-scale ${bill.isPaid ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/5 border border-white/10 text-slate-400'}`}>{bill.isPaid ? 'PAGO' : 'PAGAR'}</button></div>
+            ))}</div>
           </div>
         )}
         {activeTab === 'stats' && (
@@ -427,7 +427,7 @@ const App: React.FC = () => {
         )}
       </main>
       <nav className="bg-slate-950/80 backdrop-blur-3xl border-t border-white/5 px-2 py-6 flex justify-around items-center sticky bottom-0 z-50">
-        {[ { id: 'chat', icon: BotIcon, label: 'Mentor' }, { id: 'ledger', icon: WalletIcon, label: 'Corre' }, { id: 'calendar', icon: CalendarIcon, label: 'Agenda' }, { id: 'stats', icon: GraphIcon, label: 'Metas' }, { id: 'help', icon: SupportIcon, label: 'Ajustes' } ].map((item) => (
+        {[{ id: 'chat', icon: BotIcon, label: 'Mentor' }, { id: 'ledger', icon: WalletIcon, label: 'Corre' }, { id: 'calendar', icon: CalendarIcon, label: 'Agenda' }, { id: 'stats', icon: GraphIcon, label: 'Metas' }, { id: 'help', icon: SupportIcon, label: 'Ajustes' }].map((item) => (
           <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`flex flex-col items-center gap-2 px-4 transition-all ${activeTab === item.id ? 'text-emerald-400' : 'text-slate-600'}`}><div className={`p-2 rounded-2xl transition-all ${activeTab === item.id ? 'bg-emerald-500/10 scale-110' : ''}`}><item.icon className="w-6 h-6" /></div><span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span></button>
         ))}
       </nav>
