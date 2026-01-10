@@ -14,7 +14,7 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DEV_WHATSAPP = "5511962952615";
-const MP_PREFERENCE_ID = "696871088-3bc7ee3e-48d1-4b43-8f2e-6330fd7da74c";
+
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -67,20 +67,44 @@ const App: React.FC = () => {
     if (activeTab === 'chat') setTimeout(scrollToBottom, 200);
   }, [messages, activeTab, scrollToBottom]);
 
-  // Injeta o script do Mercado Pago na tela de bloqueio
+  const [mpPreferenceId, setMpPreferenceId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (session?.user && authStatus.isAuthorized === false && mpButtonContainerRef.current) {
+    // Se o usuário está logado mas NÃO autorizado, busca o link de pagamento dinâmico
+    if (session?.user && authStatus.isAuthorized === false && !mpPreferenceId) {
+      const fetchPreference = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('create-payment', {
+            body: { productDescription: "Acesso 30 dias", productPrice: 10 }
+          });
+
+          if (error) throw error;
+          if (data?.preferenceId) {
+            setMpPreferenceId(data.preferenceId);
+          }
+        } catch (e) {
+          console.error("Erro ao gerar link de pagamento:", e);
+        }
+      };
+
+      fetchPreference();
+    }
+  }, [session, authStatus.isAuthorized]);
+
+  // Injeta o script do Mercado Pago quando temos o Preference ID
+  useEffect(() => {
+    if (mpPreferenceId && mpButtonContainerRef.current) {
       const container = mpButtonContainerRef.current;
       if (container.children.length === 0) {
         const script = document.createElement('script');
         script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-        script.setAttribute('data-preference-id', MP_PREFERENCE_ID);
+        script.setAttribute('data-preference-id', mpPreferenceId);
         script.setAttribute('data-source', "button");
         script.async = true;
         container.appendChild(script);
       }
     }
-  }, [session, authStatus.isAuthorized]);
+  }, [mpPreferenceId]);
 
   const checkAuthorization = async (userEmail: string) => {
     try {
