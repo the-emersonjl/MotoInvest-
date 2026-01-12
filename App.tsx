@@ -68,6 +68,7 @@ const App: React.FC = () => {
   }, [messages, activeTab, scrollToBottom]);
 
   const [mpPreferenceId, setMpPreferenceId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Se o usuário está logado mas NÃO autorizado, busca o link de pagamento dinâmico
@@ -88,6 +89,7 @@ const App: React.FC = () => {
           if (error) throw error;
           if (data?.preferenceId) {
             setMpPreferenceId(data.preferenceId);
+            setCheckoutUrl(data.checkoutUrl);
           }
         } catch (e) {
           console.error("Erro ao gerar link de pagamento:", e);
@@ -97,21 +99,6 @@ const App: React.FC = () => {
       fetchPreference();
     }
   }, [session, authStatus.isAuthorized, mpPreferenceId]);
-
-  // Injeta o script do Mercado Pago quando temos o Preference ID
-  useEffect(() => {
-    if (mpPreferenceId && mpButtonContainerRef.current) {
-      const container = mpButtonContainerRef.current;
-      if (container.children.length === 0) {
-        const script = document.createElement('script');
-        script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-        script.setAttribute('data-preference-id', mpPreferenceId);
-        script.setAttribute('data-source', "button");
-        script.async = true;
-        container.appendChild(script);
-      }
-    }
-  }, [mpPreferenceId]);
 
   const checkAuthorization = async (userEmail: string) => {
     try {
@@ -332,10 +319,18 @@ const App: React.FC = () => {
           </div>
 
           <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] space-y-4 shadow-2xl">
-            {/* CONTAINER PARA O BOTÃO DO MERCADO PAGO INJETADO VIA SCRIPT */}
-            <div ref={mpButtonContainerRef} className="w-full min-h-[60px] flex items-center justify-center">
-              {/* O botão do Mercado Pago será injetado aqui */}
-            </div>
+            {/* BOTÃO DE PAGAMENTO DINÂMICO */}
+            <button
+              onClick={() => checkoutUrl && window.open(checkoutUrl, '_blank')}
+              disabled={!checkoutUrl}
+              className={`w-full py-5 rounded-3xl font-black text-xs uppercase flex items-center justify-center gap-4 transition-all active-scale shadow-2xl ${checkoutUrl
+                ? 'bg-emerald-600 text-white animate-pulse'
+                : 'bg-slate-800 text-slate-500'
+                }`}
+            >
+              <WalletIcon className="w-5 h-5" />
+              {checkoutUrl ? 'PAGAR COM MERCADO PAGO' : 'GERANDO LINK...'}
+            </button>
 
             <div className="flex items-center gap-4 py-2">
               <div className="flex-1 h-px bg-white/10" />
