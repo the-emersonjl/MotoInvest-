@@ -75,6 +75,7 @@ const App: React.FC = () => {
     if (session?.user && authStatus.isAuthorized === false && !mpPreferenceId) {
       const fetchPreference = async () => {
         try {
+          console.log("Iniciando busca de preferência para:", session.user.email);
           const { data, error } = await supabase.functions.invoke('create-payment', {
             body: {
               productDescription: "Acesso 30 dias",
@@ -87,13 +88,19 @@ const App: React.FC = () => {
             }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error("Erro invoke function:", error);
+            throw error;
+          }
+
+          console.log("Resposta create-payment:", data);
           if (data?.preferenceId) {
             setMpPreferenceId(data.preferenceId);
             setCheckoutUrl(data.checkoutUrl);
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error("Erro ao gerar link de pagamento:", e);
+          setGlobalError("Erro ao gerar link de pagamento. Tente novamente em instantes.");
         }
       };
 
@@ -107,21 +114,25 @@ const App: React.FC = () => {
         .from('authorized_users')
         .select('email, expires_at')
         .eq('email', userEmail.toLowerCase())
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        setAuthStatus({ isAuthorized: false, expiresAt: null });
+      if (error) {
+        console.error("Auth check error:", error);
         return;
       }
 
-      const expirationDate = new Date(data.expires_at);
-      const isExpired = expirationDate < new Date();
-
-      setAuthStatus({
-        isAuthorized: !isExpired,
-        expiresAt: data.expires_at
-      });
+      if (data) {
+        const expirationDate = new Date(data.expires_at);
+        const isExpired = expirationDate < new Date();
+        setAuthStatus({
+          isAuthorized: !isExpired,
+          expiresAt: data.expires_at
+        });
+      } else {
+        setAuthStatus({ isAuthorized: false, expiresAt: null });
+      }
     } catch (e) {
+      console.error("Auth check catch:", e);
       setAuthStatus({ isAuthorized: false, expiresAt: null });
     }
   };
@@ -296,14 +307,28 @@ const App: React.FC = () => {
     setIsAuthLoading(true); setGlobalError(null);
     try {
       if (authMode === 'register') {
-        const { error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name } }
+        });
         if (error) throw error;
-        setAuthMode('login');
+
+        if (data.user && data.session) {
+          // Já logou automaticamente (depende da config do Supabase)
+          setSession(data.session);
+        } else {
+          setGlobalError("Conta criada! Verifique seu e-mail para confirmar (se necessário) e faça login.");
+          setAuthMode('login');
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-    } catch (err: any) { setGlobalError(err.message); }
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      setGlobalError(err.message === "User already registered" ? "E-mail já cadastrado. Tenta o login!" : err.message);
+    }
     finally { setIsAuthLoading(false); }
   };
 
